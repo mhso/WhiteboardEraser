@@ -6,11 +6,16 @@ void setupMagnets() {
     pinMode(verticalPin, OUTPUT);
 }
 
+/**
+ * Switch the magnets on the linear actuators on/off.
+ * 
+ * @param status Status for which magnet to turn on, either
+ * MAGNET_HORIZONTAL_ON or MAGNET_VERTICAL_ON. Turning one on
+ * will turn the other off.
+ */
 void switchMagnets(int status) {
-    int voltage = status > 0 ? HIGH : LOW;
-    int otherVoltage = status > 0 ? LOW : HIGH;
-    int pin = abs(status) == MAGNET_HORIZONTAL_ON ? horizontalPin : verticalPin;
-    int otherPin = pin == horizontalPin ? verticalPin : horizontalPin;
-    digitalWrite(pin, voltage); // Turn on/off magnet indicated by status.
-    digitalWrite(otherPin, otherVoltage); // Turn off/on the other magnet.
+    int lowPin = status == MAGNET_HORIZONTAL_ON ? verticalPin : horizontalPin;
+    int highPin = status == MAGNET_HORIZONTAL_ON ? horizontalPin : verticalPin;
+    digitalWrite(lowPin, HIGH); // Turn on magnet indicated by status.
+    digitalWrite(highPin, LOW); // Turn off the other magnet.
 }

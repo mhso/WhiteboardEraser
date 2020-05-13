@@ -71,8 +71,10 @@ bool changeDirection(bool triggeredBySensor) {
         activeStepper->setSpeed(1000);
     }
     else {
-        // Reset the linear actuator to it's initial position;
-        resetActuator();
+        // Disable magnets for the horizontal actuator, activate for vertical.
+        // switchMagnets(MAGNET_VERTICAL_ON);
+        resetActuator(); // Reset the linear actuator to it's initial position.
+        // switchMagnets(MAGNET_HORIZONTAL_ON);
         verticalDirection = SOUTH;
         setRGBStatus(255, 128, 0); // Status code orange = moving down.
         // Start the vertical actuator.
@@ -123,12 +125,12 @@ int runStepper() {
             if (currentSpeed > 0) {
                 // Stepper moving clockwise. If we are moving east, magnet is off
                 // and should be turned on. Opposite if we are moving west.
-                return horizontalDirection == EAST ? MAGNET_HORIZONTAL_ON : MAGNET_HORIZONTAL_OFF;
+                return horizontalDirection == EAST ? MAGNET_HORIZONTAL_ON : MAGNET_VERTICAL_ON;
             }
             else {
                 // Stepper moving counter-clockwise. If we are moving east, magnet is on
                 // and should be turned off. Opposite if we are moving west.
-                return horizontalDirection == WEST ? MAGNET_HORIZONTAL_OFF : MAGNET_HORIZONTAL_ON;
+                return horizontalDirection == WEST ? MAGNET_VERTICAL_ON : MAGNET_HORIZONTAL_ON;
             }
         }
         else { // We are moving vertically.
@@ -136,12 +138,12 @@ int runStepper() {
             if (currentSpeed > 0) {
                 // Stepper moving clockwise. If we are moving north, magnet is off
                 // and should be turned on. Opposite if we are moving north.
-                return verticalDirection == NORTH ? MAGNET_VERTICAL_ON : MAGNET_VERTICAL_OFF;
+                return verticalDirection == NORTH ? MAGNET_VERTICAL_ON : MAGNET_HORIZONTAL_ON;
             }
             else {
                 // Stepper moving counter-clockwise. If we are moving south, magnet is on
                 // and should be turned off. Opposite if we are moving north.
-                return verticalDirection == SOUTH ? MAGNET_VERTICAL_OFF : MAGNET_VERTICAL_ON;
+                return verticalDirection == SOUTH ? MAGNET_HORIZONTAL_ON : MAGNET_VERTICAL_ON;
             }
         }
     }

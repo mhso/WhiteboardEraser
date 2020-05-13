@@ -9,9 +9,7 @@
 
 // Status codes for indicating if vertical/horizontal magnets should turn on/off. 
 #define MAGNET_HORIZONTAL_ON 1
-#define MAGNET_HORIZONTAL_OFF -1
 #define MAGNET_VERTICAL_ON 2
-#define MAGNET_VERTICAL_OFF -2
 
 // Reset switch pin.
 #define RESET_SWITCH A0
@@ -43,7 +41,7 @@ void setup() {
     pinMode(GREEN_STATUS_PIN, OUTPUT);
     pinMode(BLUE_STATUS_PIN, OUTPUT);
     setupDistSensors();
-    setupMagnets();
+    //setupMagnets();
     setRGBStatus(0, 255, 0);
     Serial.begin(9600);
 }
@@ -51,7 +49,7 @@ void setup() {
 void loop() {
     bool distChanged = distanceChanged(getDirections());
 
-    if (distChanged) { // Distance sensor detected a change. Probably means we hit edge of board. 
+    if (distChanged) { // Distance sensor detected a change. Hopefully means we hit edge of board.
         bool endOfBoard = changeDirection(true);
         if (endOfBoard) {
             Serial.println("WE ARE DONE!!!");
