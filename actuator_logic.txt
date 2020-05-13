@@ -1,0 +1,23 @@
+=== Horizontal ===
+    *** MOVING EAST ***
+        Stepper clockwise = MAGNETS OFF
+        Stepper counter-clockwise = MAGNETS ON (dragging body right)
+    *** MOVING WEST ***
+        Stepper clockwise = MAGNETS ON (dragging body left)
+        Stepper counter-clockwise = MAGNETS OFF
+=== Vertical ===
+    *** MOVING NORTH ***
+        Stepper clockwise = MAGNETS OFF
+        Stepper counter-clockwise = MAGNETS ON (dragging body up)
+    *** MOVING SOUTH ***
+        Stepper clockwise = MAGNETS ON (dragging body down)
+        Stepper counter-clockwise = MAGNETS OFF
+
+Professional Diagram:
+----------
+| *====| |     
+|   __   |  Motor (*)
+|   ||   |    Leg (=)
+|   ||   |
+|   *    |
+----------
