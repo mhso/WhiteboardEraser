@@ -62,6 +62,7 @@ bool changeDirection(bool triggeredBySensor) {
         horizontalDirection = horizontalDirection == EAST ? WEST : EAST;
         if (horizontalDirection == WEST) {
             setRGBStatus(0, 255, 255); // Status code cyan = moving west.
+            // switchMagnets(MAGNET_HORIZONTAL_ON);
         }
         else {
             setRGBStatus(0, 0, 255); // Status code blue = moving east.
