@@ -10,9 +10,7 @@
 // Status codes for indicating if vertical/horizontal magnets should turn on/off. 
 #define MAGNET_HORIZONTAL_ON 1
 #define MAGNET_VERTICAL_ON 2
-
-// Number of ticks to pass before checking distance sensor for change.
-#define CHECK_DISTANCE_INTERVAL 15000
+#define MEASURE_DISTANCE 3
 
 // Reset switch pin.
 #define RESET_SWITCH A0
@@ -23,8 +21,6 @@
 #define RED_STATUS_PIN 5
 #define GREEN_STATUS_PIN 10
 #define BLUE_STATUS_PIN 11
-
-int distanceTick = 0;
 
 // --- RGB colors statuses ---
 // Green: Nothing is going on.
@@ -52,15 +48,14 @@ void setup() {
 }
 
 void loop() {
-    if (distanceTick >= CHECK_DISTANCE_INTERVAL) {
-        if (distanceTick == CHECK_DISTANCE_INTERVAL) {
-            startDistanceReading(getDirections());
-            distanceTick++;
+    int stepperStatus = runStepper();
+
+    if (stepperStatus) {
+        if (stepperStatus < MEASURE_DISTANCE) {
+            switchMagnets(stepperStatus);
         }
-        bool distReady = pollDistanceSensor();
-        if (distReady) {
-            bool distChanged = distanceChanged();
-            if (distChanged) { // Distance sensor detected a change. Hopefully means we hit edge of board.
+        else {
+            if (distanceChanged(getDirections())) { // Distance sensor detected a change. Hopefully means we hit edge of board.
                 bool endOfBoard = changeDirection(true);
                 if (endOfBoard) {
                     Serial.println("WE ARE DONE!!!");
@@ -69,16 +64,6 @@ void loop() {
                     }
                 }
             }
-            distanceTick = 0;
         }
-    }
-    else {
-        distanceTick++;
-    }
-    int magnetStatus = runStepper();
-
-    if (magnetStatus) {
-        switchMagnets(magnetStatus);
-        distanceTick = 0;
     }
 }

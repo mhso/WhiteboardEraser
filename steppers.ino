@@ -19,9 +19,12 @@
 const int STEPS_PER_REV = 32;
 const int GEAR_RED = 64;
 const int MINI_STEPS = STEPS_PER_REV * GEAR_RED;
+
 const int STEPS_PER_CALL = MINI_STEPS / 2;
 const int STEPS_PER_CYCLE = MINI_STEPS * REVOLUTIONS_PER_CYCLE;
 const int MAX_VERT_STEPS = 2;
+const char TIMES_TO_MEASURE_DISTANCE = 4;
+const int MEASURE_AT_STEP = STEPS_PER_CYCLE / TIMES_TO_MEASURE_DISTANCE;
 
 // Current moving directions.
 int horizontalDirection = EAST;
@@ -29,14 +32,16 @@ int verticalDirection = STOPPED;
 int currentStep = 0;
 char currentVertSteps = 0;
 
-int currentSpeed = STEPS_PER_CALL;
+// Distance measurement things.
+char timesMeasuredDist = 1;
+
+int currentSpeed = STEPS_PER_CYCLE;
 int directionArr[2] = {0, 0};
 
-AccelStepper stepper = new AccelStepper();
-AccelStepper* activeStepper = &stepper;
+AccelStepper* activeStepper;
 
 void resetSteppers() {
-    int horizontalRot = -2;
+    int horizontalRot = 0;
     int verticalRot = 0;
     if (horizontalRot != 0) {
         AccelStepper stepper(AccelStepper::FULL4WIRE, IN1, IN3, IN2, IN4);
@@ -94,7 +99,8 @@ bool changeDirection(bool triggeredBySensor) {
     else {
         Serial.println("because we have moved far enough vertically.");
     }
-    currentSpeed = STEPS_PER_CALL;
+    currentSpeed = STEPS_PER_CYCLE;
+    timesMeasuredDist = 1;
     if (verticalDirection != STOPPED) {
         if (triggeredBySensor) { // If we are moving vertically and hit the edge of the board, we are done!
             setRGBStatus(255, 0, 0); // Status code red = we are done.
@@ -164,6 +170,7 @@ int runStepper() {
     else if (activeStepper->distanceToGo() == 0) {
         Serial.println("We have moved full length of actuator!");
         // We have moved the full length of the actuator.
+        timesMeasuredDist = 1;
         currentSpeed = -currentSpeed;
         activeStepper->moveTo(-activeStepper->currentPosition());
         if (verticalDirection == STOPPED) { // We are moving horizontally 
@@ -195,6 +202,10 @@ int runStepper() {
         }
     }
     activeStepper->run(); // Move the stepper a single step.
+    if (activeStepper->currentPosition() >= MEASURE_AT_STEP * timesMeasuredDist) {
+        timesMeasuredDist++;
+        return MEASURE_DISTANCE;
+    }
     return 0;
 }
 
