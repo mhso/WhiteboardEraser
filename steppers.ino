@@ -23,26 +23,26 @@ const int MINI_STEPS = STEPS_PER_REV * GEAR_RED;
 const int STEPS_PER_CALL = MINI_STEPS / 2;
 const int STEPS_PER_CYCLE = MINI_STEPS * REVOLUTIONS_PER_CYCLE;
 const int MAX_VERT_STEPS = 2;
-const char TIMES_TO_MEASURE_DISTANCE = 4;
+const int TIMES_TO_MEASURE_DISTANCE = 4;
 const int MEASURE_AT_STEP = STEPS_PER_CYCLE / TIMES_TO_MEASURE_DISTANCE;
 
 // Current moving directions.
 int horizontalDirection = EAST;
 int verticalDirection = STOPPED;
 int currentStep = 0;
-char currentVertSteps = 0;
+int currentVertSteps = 0;
 
 // Distance measurement things.
-char timesMeasuredDist = 1;
+int timesMeasuredDist = 1;
 
 int currentSpeed = STEPS_PER_CYCLE;
-int directionArr[2] = {0, 0};
+int directionArr[2] = {horizontalDirection, verticalDirection};
 
 AccelStepper* activeStepper;
 
 void resetSteppers() {
-    int horizontalRot = 0;
-    int verticalRot = 0;
+    int horizontalRot = -11;
+    int verticalRot = -7;
     if (horizontalRot != 0) {
         AccelStepper stepper(AccelStepper::FULL4WIRE, IN1, IN3, IN2, IN4);
         stepper.setMaxSpeed(600);
@@ -74,10 +74,11 @@ void startStepper(bool horizontal) {
 
 void resetActuator(int position) {
     Serial.println("Resetting actuator...");
-    Serial.print("Saved position: ");
-    Serial.println(position);
     setRGBStatus(255, 255, 0); // Status code yellow = we hit the edge.
-    int stepsNeeded = currentSpeed < 0 ? STEPS_PER_CYCLE - position : -position;
+    int stepsNeeded = currentSpeed < 0 ? STEPS_PER_CYCLE + position : -position;
+    Serial.print("Running: ");
+    Serial.print(position);
+    Serial.println(" steps.");
     runOnce(stepsNeeded);
     Serial.println("Done resetting.");
 }
@@ -101,6 +102,7 @@ bool changeDirection(bool triggeredBySensor) {
     }
     currentSpeed = STEPS_PER_CYCLE;
     timesMeasuredDist = 1;
+    resetDistanceReading();
     if (verticalDirection != STOPPED) {
         if (triggeredBySensor) { // If we are moving vertically and hit the edge of the board, we are done!
             setRGBStatus(255, 0, 0); // Status code red = we are done.
@@ -139,12 +141,9 @@ bool changeDirection(bool triggeredBySensor) {
 }
 
 /**
- * Moves the stepper for the specified amount of steps
- * (default 1024 steps = half a rotation).
+ * Moves the stepper for the specified amount of steps.
  */
 void runOnce(int steps) {
-    if (steps == 0)
-        steps = -STEPS_PER_CALL;
     activeStepper->setCurrentPosition(0);
     activeStepper->setMaxSpeed(600);
     activeStepper->runToNewPosition(steps);
@@ -160,6 +159,11 @@ void runOnce(int steps) {
  * @return Integer status code indicating which magnets should be switched on/off (if any).
  */
 int runStepper() {
+    if (timesMeasuredDist < TIMES_TO_MEASURE_DISTANCE &&
+            abs(activeStepper->currentPosition()) >= MEASURE_AT_STEP * timesMeasuredDist) {
+        timesMeasuredDist++;
+        return MEASURE_DISTANCE;
+    }
     if (currentVertSteps == MAX_VERT_STEPS) {
         // We have moved the desired distance vertically.
         Serial.println("We have moved vertically for long enough!");
@@ -172,7 +176,11 @@ int runStepper() {
         // We have moved the full length of the actuator.
         timesMeasuredDist = 1;
         currentSpeed = -currentSpeed;
-        activeStepper->moveTo(-activeStepper->currentPosition());
+        int newPos = -activeStepper->currentPosition();
+        activeStepper->setCurrentPosition(0);
+        activeStepper->setMaxSpeed(verticalDirection == STOPPED ? 600 : 500);
+        activeStepper->moveTo(newPos);
+        resetDistanceReading();
         if (verticalDirection == STOPPED) { // We are moving horizontally 
             if (currentSpeed > 0) {
                 // Stepper moving clockwise. If we are moving east, magnet is off
@@ -202,10 +210,6 @@ int runStepper() {
         }
     }
     activeStepper->run(); // Move the stepper a single step.
-    if (activeStepper->currentPosition() >= MEASURE_AT_STEP * timesMeasuredDist) {
-        timesMeasuredDist++;
-        return MEASURE_DISTANCE;
-    }
     return 0;
 }
 

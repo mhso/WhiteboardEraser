@@ -50,20 +50,22 @@ void setup() {
 void loop() {
     int stepperStatus = runStepper();
 
+    if (newDistanceReading() && distanceChanged()) {
+        bool endOfBoard = changeDirection(true);
+        if (endOfBoard) {
+            Serial.println("WE ARE DONE!!!");
+            while (1) {
+                // Infinite loop when we are done.
+            }
+        }
+    }
+
     if (stepperStatus) {
         if (stepperStatus < MEASURE_DISTANCE) {
             switchMagnets(stepperStatus);
         }
         else {
-            if (distanceChanged(getDirections())) { // Distance sensor detected a change. Hopefully means we hit edge of board.
-                bool endOfBoard = changeDirection(true);
-                if (endOfBoard) {
-                    Serial.println("WE ARE DONE!!!");
-                    while (1) {
-                        // Infinite loop when we are done.
-                    }
-                }
-            }
+            startDistanceReading(getDirections());
         }
     }
 }
