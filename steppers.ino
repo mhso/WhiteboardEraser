@@ -2,7 +2,7 @@
 #define IN1 9
 #define IN2 4
 #define IN3 13
-#define IN4 7
+#define IN4 A1
 
 // Second motor.
 #define IN5 A5
@@ -34,15 +34,20 @@ int currentVertSteps = 0;
 
 // Distance measurement things.
 int timesMeasuredDist = 1;
+// Boolean that is set to true when we have hit the bottom edge of the board.
+bool lastHorizontalCycle = false;
 
 int currentSpeed = STEPS_PER_CYCLE;
 int directionArr[2] = {horizontalDirection, verticalDirection};
 
 AccelStepper* activeStepper;
 
+/**
+ * Helper method for resetting the two stepper motors to their initial position.
+ */
 void resetSteppers() {
-    int horizontalRot = -11;
-    int verticalRot = -7;
+    int horizontalRot = 0;
+    int verticalRot = 0;
     if (horizontalRot != 0) {
         AccelStepper stepper(AccelStepper::FULL4WIRE, IN1, IN3, IN2, IN4);
         stepper.setMaxSpeed(600);
@@ -57,6 +62,13 @@ void resetSteppers() {
     }
 }
 
+/**
+ * This method creates an AccelStepper object and starts the stepper
+ * corresponding to the given direction.
+ * 
+ * @param horizontal Boolean indicating whether the stepper to starts
+ * should be the horizontal or the vertical one.
+ */
 void startStepper(bool horizontal) {
     int speed;
     if (horizontal) {
@@ -75,9 +87,9 @@ void startStepper(bool horizontal) {
 void resetActuator(int position) {
     Serial.println("Resetting actuator...");
     setRGBStatus(255, 255, 0); // Status code yellow = we hit the edge.
-    int stepsNeeded = currentSpeed < 0 ? STEPS_PER_CYCLE + position : -position;
+    int stepsNeeded = currentSpeed < 0 ? STEPS_PER_CYCLE - position : -position;
     Serial.print("Running: ");
-    Serial.print(position);
+    Serial.print(stepsNeeded);
     Serial.println(" steps.");
     runOnce(stepsNeeded);
     Serial.println("Done resetting.");
@@ -104,9 +116,8 @@ bool changeDirection(bool triggeredBySensor) {
     timesMeasuredDist = 1;
     resetDistanceReading();
     if (verticalDirection != STOPPED) {
-        if (triggeredBySensor) { // If we are moving vertically and hit the edge of the board, we are done!
-            setRGBStatus(255, 0, 0); // Status code red = we are done.
-            return true;
+        if (triggeredBySensor) { // We have hit the bottom of the board.
+            lastHorizontalCycle = true;
         }
         verticalDirection = STOPPED;
         horizontalDirection = horizontalDirection == EAST ? WEST : EAST;
@@ -124,6 +135,10 @@ bool changeDirection(bool triggeredBySensor) {
         startStepper(true);
     }
     else {
+        if (lastHorizontalCycle) { // If we have hit the bottom corner of the board, we are done!
+            setRGBStatus(255, 0, 0); // Status code red = we are done.
+            return true;
+        }
         // Stop the horizontal actuator.
         int position = activeStepper->currentPosition();
         activeStepper->stop();

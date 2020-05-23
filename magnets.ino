@@ -1,5 +1,5 @@
 const int horizontalPin = 6; // Pin of horizontal actuator magnet.
-const int verticalPin = 1337; // Pin of vertical actuator magnet.
+const int verticalPin = 1337; // Pin of vertical actuator magnet (not used).
 
 void setupMagnets() {
     pinMode(horizontalPin, OUTPUT);

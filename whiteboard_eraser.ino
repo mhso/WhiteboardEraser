@@ -12,10 +12,8 @@
 #define MAGNET_VERTICAL_ON 2
 #define MEASURE_DISTANCE 3
 
-// Reset switch pin.
-#define RESET_SWITCH A0
-// Kill switch pin.
-#define KILL_SWITCH A1
+// Start switch pin.
+#define START_SWITCH 7
 
 // Pins for RGB LED
 #define RED_STATUS_PIN 5
@@ -39,10 +37,13 @@ void setup() {
     pinMode(RED_STATUS_PIN, OUTPUT);
     pinMode(GREEN_STATUS_PIN, OUTPUT);
     pinMode(BLUE_STATUS_PIN, OUTPUT);
-    setupDistSensors();
+    pinMode(START_SWITCH, INPUT);
     setupMagnets();
     setRGBStatus(0, 255, 0);
     Serial.begin(9600);
+    while (digitalRead(START_SWITCH) == LOW) {
+        delay(100); // Sleep until start switch is pressed.
+    }
     resetSteppers();
     startStepper(true);
 }
