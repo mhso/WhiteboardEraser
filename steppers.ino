@@ -31,6 +31,8 @@ int horizontalDirection = EAST;
 int verticalDirection = STOPPED;
 int currentStep = 0;
 int currentVertSteps = 0;
+long currentHorizontalPosition = 0;
+long totalHorizontalDistance = 0;
 
 // Distance measurement things.
 int timesMeasuredDist = 1;
@@ -121,6 +123,7 @@ bool changeDirection(bool triggeredBySensor) {
         }
         verticalDirection = STOPPED;
         horizontalDirection = horizontalDirection == EAST ? WEST : EAST;
+        currentHorizontalPosition = 0;
         if (horizontalDirection == WEST) {
             setRGBStatus(0, 255, 255); // Status code cyan = moving west.
             switchMagnets(MAGNET_HORIZONTAL_ON);
@@ -135,6 +138,9 @@ bool changeDirection(bool triggeredBySensor) {
         startStepper(true);
     }
     else {
+        if (totalHorizontalDistance == 0) { // We our on our first horizontal cycle.
+            totalHorizontalDistance = currentHorizontalPosition + abs(activeStepper->currentPosition());
+        }
         if (lastHorizontalCycle) { // If we have hit the bottom corner of the board, we are done!
             setRGBStatus(255, 0, 0); // Status code red = we are done.
             return true;
@@ -174,8 +180,11 @@ void runOnce(int steps) {
  * @return Integer status code indicating which magnets should be switched on/off (if any).
  */
 int runStepper() {
-    if (timesMeasuredDist < TIMES_TO_MEASURE_DISTANCE &&
-            abs(activeStepper->currentPosition()) >= MEASURE_AT_STEP * timesMeasuredDist) {
+    if ((verticalDirection != STOPPED || totalHorizontalDistance == 0)
+            && (timesMeasuredDist < TIMES_TO_MEASURE_DISTANCE
+            && abs(activeStepper->currentPosition()) >= MEASURE_AT_STEP * timesMeasuredDist)) {
+        // We are moving vertically or it is the first time we are moving horizontally,
+        // AND we have moved far enough to measure distance.
         timesMeasuredDist++;
         return MEASURE_DISTANCE;
     }
@@ -184,6 +193,9 @@ int runStepper() {
         Serial.println("We have moved vertically for long enough!");
         currentVertSteps = 0;
         resetDistanceReading();
+        changeDirection(false);
+    }
+    else if (currentHorizontalPosition >= totalHorizontalDistance) {
         changeDirection(false);
     }
     else if (activeStepper->distanceToGo() == 0) {
@@ -196,7 +208,8 @@ int runStepper() {
         activeStepper->setMaxSpeed(verticalDirection == STOPPED ? 600 : 500);
         activeStepper->moveTo(newPos);
         resetDistanceReading();
-        if (verticalDirection == STOPPED) { // We are moving horizontally 
+        if (verticalDirection == STOPPED) { // We are moving horizontally
+            currentHorizontalPosition += abs(activeStepper->currentPosition());
             if (currentSpeed > 0) {
                 // Stepper moving clockwise. If we are moving east, magnet is off
                 // and should be turned on. Opposite if we are moving west.
